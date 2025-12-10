@@ -1,0 +1,228 @@
+#!/usr/bin/env python3
+import os
+import json
+import re
+import time
+import random
+from datetime import datetime
+from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
+
+# ---------------------------------------------
+# CONFIGURATION
+# ---------------------------------------------
+WAIT_TIME = 30
+HUMAN_DELAY_RANGE = (15, 28)
+PRE_LAUNCH_DELAY = (5, 12)
+BASE_DIR = os.path.join("UK", "data", "2025-11-07")
+JSON_DATA_DIR = os.path.join(BASE_DIR, "json_data")
+ITEM_URLS_DIR = os.path.join(BASE_DIR, "item_urls")
+os.makedirs(JSON_DATA_DIR, exist_ok=True)
+
+# ---------------------------------------------
+# DRIVER & BLOCK DETECTION
+# ---------------------------------------------
+def get_firefox_driver(headless=False):
+    options = Options()
+    if headless:
+        options.add_argument("--headless")
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    x = random.randint(0, 500)
+    y = random.randint(0, 300)
+    options.add_argument(f"--window-position={x},{y}")
+    service = Service()
+    return webdriver.Firefox(service=service, options=options)
+
+def is_blocked(page_source):
+    return "oops something went wrong" in page_source.lower()
+
+def get_page_source(url):
+    attempts = 0
+    while attempts < 3:
+        driver = get_firefox_driver()
+        try:
+            print(f"Opening {url}")
+            driver.get(url)
+            time.sleep(3)
+
+            # Handle block page
+            for _ in range(3):
+                if is_blocked(driver.page_source):
+                    print("Block detected → refreshing...")
+                    driver.refresh()
+                    time.sleep(random.uniform(5, 8))
+                else:
+                    break
+
+            WebDriverWait(driver, WAIT_TIME).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
+            time.sleep(6)
+            source = driver.page_source
+            driver.quit()
+            if not is_blocked(source):
+                return source
+        except Exception as e:
+            print(f"Error: {e}")
+            driver.quit()
+        attempts += 1
+        time.sleep(10)
+    return None
+
+# ---------------------------------------------
+# MAIN: EXTRACT ALL IMAGES FROM CAROUSEL
+# ---------------------------------------------
+def extract_carousel_images(soup):
+    """
+    Extract all high-resolution image URLs from New Balance carousel.
+    Supports both <button data-src="..."> and <img src="..."> inside <picture>.
+    Returns list of unique cleaned URLs (preferring 880x880 over 440x440).
+    """
+    images = []
+    carousel = soup.find("div", class_=re.compile(r"carousel-inner"))
+    if not carousel:
+        print("No carousel-inner found")
+        return images
+
+    carousel_items = carousel.find_all("div", class_=re.compile(r"carousel-item"))
+    print(f"Found {len(carousel_items)} carousel items")
+
+    for item in carousel_items:
+        # 1️⃣ Try <button data-src>
+        btn = item.find("button", {"data-toggle": "modal", "data-target": "#zoommodal"})
+        if btn and btn.get("data-src"):
+            src = btn["data-src"].replace("&amp;", "&").strip()
+            if "wid=440" in src:
+                src = src.replace("wid=440", "wid=880").replace("hei=440", "hei=880")
+            if src not in images:
+                images.append(src)
+            continue
+
+        # 2️⃣ Try <img> inside <picture> or directly in carousel item
+        img = item.find("img", attrs={"data-src": True}) or item.find("img", attrs={"src": True})
+        if img:
+            src = img.get("data-src") or img.get("src")
+            if src:
+                src = src.replace("&amp;", "&").strip()
+                if "wid=440" in src:
+                    src = src.replace("wid=440", "wid=880").replace("hei=440", "hei=880")
+                if src not in images:
+                    images.append(src)
+
+    print(f"Extracted {len(images)} image URLs")
+    return images
+
+# ---------------------------------------------
+# PRODUCT DATA EXTRACTION
+# ---------------------------------------------
+def extract_product_data(page_content, url):
+    soup = BeautifulSoup(page_content, "html.parser")
+
+    # ld+json
+    ld_json = {}
+    for script in soup.find_all("script", type="application/ld+json"):
+        try:
+            data = json.loads(script.string.strip())
+            if isinstance(data, dict) and data.get("name"):
+                ld_json = data
+                break
+        except:
+            continue
+
+    # Images from carousel
+    carousel_images = extract_carousel_images(soup)
+
+    # Launch price
+    launch_price = None
+    strike = soup.find("span", class_=re.compile(r"strike-through"))
+    if strike:
+        val = strike.find("span", class_="value")
+        if val and val.get("content"):
+            launch_price = val["content"]
+
+    # Composition / features
+    composition = " | ".join([
+        s.get_text(strip=True) for s in soup.find_all("span")
+        if "material" in s.get_text(strip=True).lower() or "composition" in s.get_text(strip=True).lower()
+    ] + [
+        li.get_text(strip=True) for li in soup.select("div.ecom-bullets li")
+    ])
+
+    return {
+        "ld_json": ld_json,
+        "details": {
+            "composition": composition or None,
+            "launch_price": launch_price
+        },
+        "images": carousel_images,
+        "image_count": len(carousel_images)
+    }
+
+def get_product_id(data, url):
+    ld = data.get("ld_json", {})
+    return ld.get("sku") or ld.get("productID") or re.search(r"([A-Z0-9-]{5,})", url).group(1)
+
+# ---------------------------------------------
+# SCRAPING LOOP
+# ---------------------------------------------
+category_file = os.path.join(ITEM_URLS_DIR, "all_product_urls_set.json")
+if not os.path.exists(category_file):
+    print("Missing all_product_urls_set.json")
+    exit(1)
+
+with open(category_file, "r", encoding="utf-8") as f:
+    urls = json.load(f).get("urls", [])
+
+folder = os.path.join(JSON_DATA_DIR, "new_balance_products")
+os.makedirs(folder, exist_ok=True)
+existing = {f.split('.')[0] for f in os.listdir(folder) if f.endswith(".json")}
+
+total = 0
+for i, url in enumerate(urls, 1):
+    pid = re.search(r"([A-Z0-9-]{5,})", url)
+    if pid and pid.group(1) in existing:
+        print(f"[{i}] Skipping {url}")
+        continue
+
+    print(f"\n[{i}/{len(urls)}] Scraping → {url}")
+    time.sleep(random.uniform(*PRE_LAUNCH_DELAY))
+
+    source = get_page_source(url)
+    if not source:
+        print("Failed or blocked")
+        continue
+
+    data = extract_product_data(source, url)
+    if not data["ld_json"]:
+        print("No product data")
+        continue
+
+    product_id = get_product_id(data, url)
+    filepath = os.path.join(folder, f"{product_id}.json")
+
+    final = {
+        "url": url,
+        "product_id": product_id,
+        "scraped_at": datetime.utcnow().isoformat() + "Z",
+        **data
+    }
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(final, f, indent=2, ensure_ascii=False)
+
+    print(f"SAVED {product_id}.json → {data['image_count']} images (expect 6 for 1080v14)")
+
+    total += 1
+    time.sleep(random.uniform(*HUMAN_DELAY_RANGE))
+
+print(f"\nDONE! Scraped {total} products.")
+print("Each JSON now includes all <img> or <button data-src> carousel images (e.g. 6 for 1080v14).")
