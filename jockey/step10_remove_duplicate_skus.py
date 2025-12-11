@@ -93,8 +93,9 @@ def run_duplicate_removal(countries, fetch_date):
 
 if __name__ == "__main__":
     from datetime import datetime
+    
     TODAY_DATE = datetime.now().strftime("%Y-%m-%d")
-    TODAY_DATE = "2025-12-09"
+    # TODAY_DATE = "2025-12-08"
     COUNTRIES = {'India': 'India'}
     
     run_duplicate_removal(COUNTRIES, TODAY_DATE)

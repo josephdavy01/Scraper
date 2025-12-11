@@ -158,12 +158,6 @@ def get_age_range(size):
     return age_range
 
 
-def get_pid(name, pdict):
-    name = name.strip()
-    for pid, pname in pdict.items():
-        if pname.strip().lower() == name.lower():
-            return pid
-    return '0000000'
 
 def remap_gender(json_data):
     tags = json_data.get('tags', [])
@@ -192,7 +186,8 @@ def get_images(product):
     result = []
     images = product.get("images") or []
 
-    for img in images:
+    for idx, img in enumerate(images):
+        # Extract url
         if isinstance(img, dict):
             url = img.get("src") or img.get("url")
         else:
@@ -200,33 +195,38 @@ def get_images(product):
 
         if not url:
             continue
-
+        
         if isinstance(url, str) and url.startswith("//"):
             url = "https:" + url
 
+        image_style = f"s{idx}"
+
         result.append({
             "url": url,
-            "image_style": "s0"
+            "image_style": image_style
         })
-    
+
     return result
 
-def create_individual_json(base_url, today_str, json_data, gender,pdict,cdict):
+
+def create_individual_json(base_url, today_str, json_data, gender):
     all_products = []
     errors = []
     base_url = "https://www.jockey.in/products/"
     try:
         variants = json_data.get("variants") or []
         url = base_url + (json_data.get('handle') or '')
-        title = json_data.get("title") or ''
+        title = json_data.get("title").lower()
         name = title.rsplit(' - ', 1)[0]
-        pid = 'jky' + get_pid(name, pdict)
         gender = remap_gender(json_data)
         country = "india"
         cname_parts = title.rsplit(' - ', 1)[-1] if ' - ' in title else ''
         cname = re.sub(r"\s*\(.*?\)", "", cname_parts).strip().lower()
-        cid = get_cid(cname, cdict)
         raw_price = json_data.get('price')
+        pid_img = json_data.get("images")[0]
+        split = pid_img.rsplit('/')[-1]
+        pid = 'jky' + split.split('_')[0]
+        cid = split.split('_')[1]
         price = math.ceil(raw_price / 100) if raw_price is not None else None
         compare_price_raw = json_data.get('compare_at_price')
         oldprice = math.ceil(compare_price_raw / 100) if compare_price_raw is not None else price
@@ -281,7 +281,7 @@ def create_individual_json(base_url, today_str, json_data, gender,pdict,cdict):
     return all_products, errors
 
 
-def process_jsons(base_url, today_str, country, pdict, cdict, execution_config=None):
+def process_jsons(base_url, today_str, country, execution_config=None):
     all_country_products = []   
     error_logs = []
 
@@ -308,7 +308,7 @@ def process_jsons(base_url, today_str, country, pdict, cdict, execution_config=N
                 with open(file_path, 'r', encoding='utf-8') as json_file:
                     data = json.load(json_file)
 
-                products, errors = create_individual_json(base_url, today_str, data, gender_hint, pdict, cdict)
+                products, errors = create_individual_json(base_url, today_str, data, gender_hint)
 
                 if products:
                     all_country_products.extend(products)
@@ -337,7 +337,7 @@ def process_jsons(base_url, today_str, country, pdict, cdict, execution_config=N
     return all_country_products, error_logs
 
 
-def save_country_data_to_json(countries, today_str, pdict, cdict, re_run=False, execution_config=None):
+def save_country_data_to_json(countries, today_str, re_run=False, execution_config=None):
     """Save processed data to JSON files for each country."""
     country_list = countries.keys() if isinstance(countries, dict) else countries
 
@@ -356,7 +356,7 @@ def save_country_data_to_json(countries, today_str, pdict, cdict, re_run=False, 
             continue
 
         logging.info(f"Processing {country} apparel...")
-        all_products, error_logs = process_jsons(base_url, today_str, country, pdict, cdict, execution_config)
+        all_products, error_logs = process_jsons(base_url, today_str, country, execution_config)
 
         os.makedirs(output_dir, exist_ok=True)
 
@@ -392,40 +392,10 @@ if __name__ == "__main__":
     )
     
     today_str = date.today().strftime('%Y-%m-%d')
-    # today_str = "2025-12-09"
-    pid_path = 'jockey_pid_remapping.json'
-    cid_path = 'jockey_cid_remapping.json'
-
-    if os.path.exists(pid_path):
-        try:
-            with open(pid_path, 'r') as json_file:
-                content = json_file.read().strip()
-                if content:
-                    pdict = json.loads(content)
-                else:
-                    pdict = {}
-        except json.JSONDecodeError:
-            logging.info(f"Warning: Invalid JSON in {pid_path}, using empty dictionary")
-            pdict = {}
-    else:
-        pdict = {}
-
-    if os.path.exists(cid_path):
-        try:
-            with open(cid_path, 'r') as json_file:
-                content = json_file.read().strip()
-                if content:
-                    cdict = json.loads(content)
-                else:
-                    cdict = {}
-        except json.JSONDecodeError:
-            logging.info(f"Warning: Invalid JSON in {cid_path}, using empty dictionary")
-            cdict = {}
-    else:
-        cdict = {}
+  
 
     countries = {
         'India': 'https://www.jockey.in/products/'
     }
 
-    save_country_data_to_json(countries, today_str, pdict, cdict, re_run=False)
+    save_country_data_to_json(countries, today_str,re_run=False)
