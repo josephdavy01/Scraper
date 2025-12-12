@@ -22,12 +22,11 @@ from step3_variant_product_urls import variant_product_urls as variant_data
 from step4_daily_count import process_country_data as process_daily_count
 from step5_get_unique_product_urls import process_country_data as get_unique_urls
 from step6_product_data import main as product_data_main
-from step7_update_cid_pid import run_pid_cid_mapping_tts
-from step8_urls_json_comparison import compare_urls_json_comparisons
-from step9_process_json import save_country_data_to_json
-from step10_remove_duplicate_skus import run_duplicate_removal
-from step11_check_data_format import check_data_format
-from step12_upload_to_melody import upload_to_data_melody
+from step7_urls_json_comparison import compare_urls_json_comparisons
+from step8_process_json import save_country_data_to_json
+from step9_remove_duplicate_skus import run_duplicate_removal
+from step10_check_data_format import check_data_format
+from step11_upload_to_melody import upload_to_data_melody
 from alert import raise_ticket
 
 # ---------------------- CONFIGURATION ---------------------- #
@@ -96,12 +95,11 @@ EXECUTION_CONFIG = {
     "run_step4_get_daily_count": True,
     "run_step5_get_unique_product_urls": True,
     "run_step6_product_data": True,
-    "run_step7_update_cid_pid": True,
-    "run_step8_urls_json_comparison": True,
-    "run_step9_process_json": True,
-    "run_step10_remove_duplicate_skus": True,
-    "run_step11_check_format": True,
-    "run_step12_upload_to_melody": True,
+    "run_step7_urls_json_comparison": True,
+    "run_step8_process_json": True,
+    "run_step9_remove_duplicate_skus": True,
+    "run_step10_check_format": True,
+    "run_step11_upload_to_melody": True,
 }
 
 # ---------------------- MAIN PIPELINE ---------------------- #
@@ -202,7 +200,7 @@ async def main():
             log_file_path = os.path.join(
                 country,
                 TODAY_DATE,
-                'Items_urls',
+                'Item_urls',
                 f"{country}_product_urls_comparison.json"
             )
 
@@ -255,7 +253,7 @@ async def main():
             log_file_path = os.path.join(
                 country,
                 TODAY_DATE,
-                'Items_urls',
+                'Item_urls',
                 f"{country}_product_urls_comparison.json"
             )
 
@@ -319,81 +317,49 @@ async def main():
             raise_ticket("Master", "get_product_data_main", f"Step 5 error: {e}")
 
     # ---------------------- STEP 7 ---------------------- #
-    if EXECUTION_CONFIG.get("run_step7_update_cid_pid", True):
-        logging.info("\nStep 7: updates cid and pid")
+    if EXECUTION_CONFIG.get("run_step7_urls_json_comparison"):
+        logging.info("\nStep 7: URLs JSON comparison")
         try:
-            run_pid_cid_mapping_tts()
+            compare_urls_json_comparisons()
         except Exception as e:
             logging.error(f"Step 7 error: {e}")
-            raise_ticket("Master", "update_cid_pid", f"Step 6 error: {e}")
+            raise_ticket("Master", "compare_urls_json_comparisons", f"Step 7 error: {e}")
 
     # ---------------------- STEP 8 ---------------------- #
-    if EXECUTION_CONFIG.get("run_step8_urls_json_comparison"):
-        logging.info("STEP 8: Processing JSON data")
+    if EXECUTION_CONFIG.get("run_step8_process_json"):
+        logging.info("\nStep 8: Processing JSON data")
         try:
-            save_country_data_to_json(today_str=TODAY_DATE, countries=COUNTRIES, re_run=False)
+            save_country_data_to_json(COUNTRIES, TODAY_DATE, re_run=False)
         except Exception as e:
-            raise_ticket("Step 8", "save_country_data_to_json", str(e), "USA")
+            logging.error(f"Step 8 error: {e}")
+            raise_ticket("Master", "save_country_data_to_json", f"Step 8 error: {e}")
 
     # ---------------------- STEP 9 ---------------------- #
-    if EXECUTION_CONFIG.get("run_step9_process_json"):
-        logging.info("\nStep 9: process_json_data  ")
-        try:
-            # Load PID and CID dictionaries
-            pid_path = 'jockey_pid_remapping.json'
-            cid_path = 'jockey_cid_remapping.json'
-            
-            pdict = {}
-            if os.path.exists(pid_path):
-                try:
-                    with open(pid_path, 'r') as f:
-                        content = f.read().strip()
-                        if content:
-                            pdict = json.loads(content)
-                except json.JSONDecodeError:
-                    logging.warning(f"Invalid JSON in {pid_path}, using empty dictionary")
-            
-            cdict = {}
-            if os.path.exists(cid_path):
-                try:
-                    with open(cid_path, 'r') as f:
-                        content = f.read().strip()
-                        if content:
-                            cdict = json.loads(content)
-                except json.JSONDecodeError:
-                    logging.warning(f"Invalid JSON in {cid_path}, using empty dictionary")
-            
-            save_country_data_to_json(COUNTRIES, TODAY_DATE, pdict, cdict, re_run=False)
-        except Exception as e:
-            logging.error(f"Step 9 error: {e}")
-            raise_ticket("Master", "process_json_data", f"Step 9 error: {e}")
-
-    # ---------------------- STEP 10 ---------------------- #
-    if EXECUTION_CONFIG.get("run_step10_remove_duplicate_skus"):
-        logging.info("\nStep 10: remove_duplicates  ")
+    if EXECUTION_CONFIG.get("run_step9_remove_duplicate_skus"):
+        logging.info("\nStep 9: Removing duplicate SKUs")
         try:
             run_duplicate_removal(COUNTRIES, TODAY_DATE)
-        except Exception as e:  
-            logging.error(f"Step 10 error: {e}")
-            raise_ticket("Master", "remove_duplicates", f"Step 10 error: {e}")
+        except Exception as e:
+            logging.error(f"Step 9 error: {e}")
+            raise_ticket("Master", "run_duplicate_removal", f"Step 9 error: {e}")
 
-    # ---------------------- STEP 11 ---------------------- #
-    if EXECUTION_CONFIG.get("run_step11_check_format"):
-        logging.info("\nStep 11: check_data_format  ")
+    # ---------------------- STEP 10 ---------------------- #
+    if EXECUTION_CONFIG.get("run_step10_check_format"):
+        logging.info("\nStep 10: Checking data format")
         try:
             check_data_format(COUNTRIES, TODAY_DATE)
         except Exception as e:
-            logging.error(f"Step 11 error: {e}")
-            raise_ticket("Master", "check_data_format", f"Step 11 error: {e}")
+            logging.error(f"Step 10 error: {e}")
+            raise_ticket("Master", "check_data_format", f"Step 10 error: {e}")
 
-    # ---------------------- STEP 12 ---------------------- #
-    if EXECUTION_CONFIG.get("run_step12_upload_to_melody"):
-        logging.info("\nStep 12: upload_to_melody  ")
+    # ---------------------- STEP 11 ---------------------- #
+    if EXECUTION_CONFIG.get("run_step11_upload_to_melody"):
+        logging.info("\nStep 11: Uploading to Melody")
         try:
             upload_to_data_melody(COUNTRIES, TODAY_DATE, MONGO_CONFIG_APPAREL)
         except Exception as e:
-            logging.error(f"Step 12 error: {e}")
-            raise_ticket("Master", "upload_to_data_melody", f"Step 12 error: {e}")
+            logging.error(f"Step 11 error: {e}")
+            raise_ticket("Master", "upload_to_data_melody", f"Step 11 error: {e}")
 
     logging.info("Scraping completed successfully!")
 

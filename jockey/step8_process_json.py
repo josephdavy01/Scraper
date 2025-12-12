@@ -227,7 +227,14 @@ def create_individual_json(base_url, today_str, json_data, gender):
         if ('pack of') in title:
             raw_pid = '#' + raw_pid
         pid = 'jky' + raw_pid
-        cid = json_data.get("color_details")["bulk_box_material_code"].split('-')[-1]
+        mcid_splits = json_data.get("color_details")["sap_material_code"].replace(' ', '').split('/')
+        cid_list = []
+        for mcid_split in mcid_splits:
+            cid_splits = mcid_split.split('-')
+            cid = '-'.join(cid_splits[2:])
+            cid_list.append(cid)
+        cid = ('_'.join(cid_list)).replace(' ','')
+        
         category = json_data.get("type")
         price = math.ceil(raw_price / 100) if raw_price is not None else None
         compare_price_raw = json_data.get('compare_at_price')
@@ -396,7 +403,7 @@ if __name__ == "__main__":
     )
     
     today_str = date.today().strftime('%Y-%m-%d')
-    # today_str = "2025-12-11"
+    today_str = "2025-12-11"
   
 
     countries = {
