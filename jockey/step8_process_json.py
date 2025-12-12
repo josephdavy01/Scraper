@@ -160,23 +160,25 @@ def get_age_range(size):
 
 
 def remap_gender(json_data):
-    tags = json_data.get('tags', [])
+    tags = json_data.get("tags", [])
 
-    if isinstance(tags, list):
-        tags_str = ' '.join(tags).lower()
+    parent_category_name = json_data.get("color_details", {}).get("parent_category_name") or ""
+ 
+    sub_category_name = json_data.get("color_details", {}).get("sub_category_name") or "" 
+  
+    combined = " ".join(tags).lower() + " " + parent_category_name.lower() + " " + sub_category_name.lower()
 
-        if any(k in tags_str for k in ['men', 'mens']):
-            return 'male'
-        if any(k in tags_str for k in ['women', 'womens']):
-            return 'female'
-        if any(k in tags_str for k in ['boy', 'boys']):
-            return 'male'
-        if any(k in tags_str for k in ['girl', 'girls']):
-            return 'female'
-        if any(k in tags_str for k in ['kids', 'kid', 'unisex']):
-            return 'unisex'
+    if any(k in combined for k in ["women", "womens", "woman", "girl", "girls"]):
+        return "female"
 
-    return 'unisex'
+    if any(k in combined for k in ["men", "mens", "man", "boy", "boys"]):
+        return "male"
+
+    if any(k in combined for k in ["kids", "kid", "unisex"]):
+        return "unisex"
+
+    return "unisex"
+
 
 
 
@@ -206,7 +208,7 @@ def get_images(product):
 
     return result
 
-pop_key = ["Handkerchief", "Towel", "Bath Mat",'Socks' ]
+pop_key = ["Handkerchief", "Towel",'Socks' ,"Accessories"]
 
 def create_individual_json(base_url, today_str, json_data, gender):
     all_products = []
@@ -234,7 +236,7 @@ def create_individual_json(base_url, today_str, json_data, gender):
             cid = '-'.join(cid_splits[2:])
             cid_list.append(cid)
         cid = ('_'.join(cid_list)).replace(' ','')
-        
+       
         category = json_data.get("type")
         price = math.ceil(raw_price / 100) if raw_price is not None else None
         compare_price_raw = json_data.get('compare_at_price')
@@ -318,8 +320,9 @@ def process_jsons(base_url, today_str, country, execution_config=None):
                     data = json.load(json_file)
 
                 products, errors = create_individual_json(base_url, today_str, data, gender_hint)
-                category = data.get("type")
+                category = data.get("color_details", {}).get("category_name")
                 if category in pop_key:
+                    logging.info(f"Skipping {category} {file}")
                     continue
                 if products:
                     all_country_products.extend(products)
@@ -403,7 +406,7 @@ if __name__ == "__main__":
     )
     
     today_str = date.today().strftime('%Y-%m-%d')
-    today_str = "2025-12-11"
+    # today_str = "2025-12-11"
   
 
     countries = {
