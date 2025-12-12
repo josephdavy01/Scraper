@@ -190,7 +190,7 @@ if __name__ == "__main__":
     load_dotenv()
     
     TODAY_DATE = datetime.now().strftime("%Y-%m-%d")
-    # TODAY_DATE = "2025-12-09"
+    # TODAY_DATE = "2025-12-11"
     COUNTRIES = {'India': 'India'}
     
     MONGO_CONFIG = {

@@ -178,8 +178,6 @@ def remap_gender(json_data):
 
     return 'unisex'
 
-def get_cid(color_name, cdict):
-    return cdict.get(color_name)
 
 
 def get_images(product):
@@ -208,6 +206,7 @@ def get_images(product):
 
     return result
 
+pop_key = ["Handkerchief", "Towel", "Bath Mat",'Socks' ]
 
 def create_individual_json(base_url, today_str, json_data, gender):
     all_products = []
@@ -217,16 +216,19 @@ def create_individual_json(base_url, today_str, json_data, gender):
         variants = json_data.get("variants") or []
         url = base_url + (json_data.get('handle') or '')
         title = json_data.get("title").lower()
+        category = json_data.get("type")
         name = title.rsplit(' - ', 1)[0]
         gender = remap_gender(json_data)
         country = "india"
         cname_parts = title.rsplit(' - ', 1)[-1] if ' - ' in title else ''
         cname = re.sub(r"\s*\(.*?\)", "", cname_parts).strip().lower()
         raw_price = json_data.get('price')
-        pid_img = json_data.get("images")[0]
-        split = pid_img.rsplit('/')[-1]
-        pid = 'jky' + split.split('_')[0]
-        cid = split.split('_')[1]
+        raw_pid = json_data.get("color_details")["style_number"].replace('#', '')
+        if ('pack of') in title:
+            raw_pid = '#' + raw_pid
+        pid = 'jky' + raw_pid
+        cid = json_data.get("color_details")["bulk_box_material_code"].split('-')[-1]
+        category = json_data.get("type")
         price = math.ceil(raw_price / 100) if raw_price is not None else None
         compare_price_raw = json_data.get('compare_at_price')
         oldprice = math.ceil(compare_price_raw / 100) if compare_price_raw is not None else price
@@ -309,10 +311,12 @@ def process_jsons(base_url, today_str, country, execution_config=None):
                     data = json.load(json_file)
 
                 products, errors = create_individual_json(base_url, today_str, data, gender_hint)
-
+                category = data.get("type")
+                if category in pop_key:
+                    continue
                 if products:
                     all_country_products.extend(products)
-                    logging.info(f"Processed {file}: {len(products)} products")
+                    logging.info(f"Processed {category} {file}: {len(products)} products")
                 else:
                     logging.warning(f"Skipping {file} - {errors}")
                     error_logs.append({
@@ -392,6 +396,7 @@ if __name__ == "__main__":
     )
     
     today_str = date.today().strftime('%Y-%m-%d')
+    # today_str = "2025-12-11"
   
 
     countries = {

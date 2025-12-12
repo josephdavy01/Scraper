@@ -124,6 +124,14 @@ async def save_product_json(product_url, path_parts, today):
                 product_json = json.loads(match.group(2))
                 break
 
+    variant_cards = soup.find_all("div", class_="variantCard")
+    if variant_cards:
+        for variant_card in variant_cards:
+            temp_json = json.loads(variant_card.get('data-gtm-product-info'))
+            if temp_json['name'].strip() == product_json['title'].strip():
+                product_json['color_details'] = temp_json
+                continue
+    
     if not product_json:
         print(f"product_json not found → {product_url}")
         return (False, product_url)  # Return failure
