@@ -301,7 +301,7 @@ def create_individual_json(json_data,today_str):
                     "price": price,
                     "launch_price": launch_price,
                     "availability": availability,
-                    "Composition": composition,
+                    "composition": composition,
                     "origin": None,
                     "images": images
                     }
