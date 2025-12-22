@@ -4,6 +4,7 @@ import json
 import re
 import asyncio
 from datetime import date
+from pathlib import Path
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
@@ -39,6 +40,11 @@ async def scrape_product_data_uk(country, config):
     categories = load_category_urls(country)
     
     logging.info(f"Starting product URL scrape for {country}")
+    
+    # Track URLs for logging
+    all_urls = []
+    successful_urls = []
+    failed_urls = []
     
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -86,6 +92,7 @@ async def scrape_product_data_uk(country, config):
                 logging.info(f"Processing category: {category_name} ({len(products)} products)")
                 
                 for product_name, product_url in products.items():
+                    all_urls.append(product_url)
                     try:
                         # api call
                         product_handle = product_url.split("/")[-1].split("?")[0]
@@ -121,16 +128,40 @@ async def scrape_product_data_uk(country, config):
                                 json.dump(product_data, f, indent=2, ensure_ascii=False)
                             
                             total_products += 1
+                            successful_urls.append(product_url)
                             logging.info(f"  Saved: {product_name}")
                         else:
+                            failed_urls.append(product_url)
                             logging.warning(f"  Failed to fetch {product_name}: Status {response.status}")
                         
                         await asyncio.sleep(0.5)  
                         
                     except Exception as e:
+                        failed_urls.append(product_url)
                         logging.error(f"  Error processing {product_name}: {str(e)}")
                         continue
             
+            # Save detailed log
+            log_dir = Path(f"{country}/{today_str}/Json_data/Logs")
+            log_dir.mkdir(parents=True, exist_ok=True)
+
+            detailed_log_path = log_dir / f'{country.lower()}_scrape_log_detailed.json'
+            detailed_log_data = {
+                'scrape_date': today_str,
+                'country': country,
+                'total_urls_to_scrape': len(all_urls),
+                'successful_scrapes': len(successful_urls),
+                'failed_scrapes': len(failed_urls),
+                'success_rate': f"{(len(successful_urls) / len(all_urls) * 100):.2f}%" if all_urls else "0%",
+                'successful_urls': successful_urls,
+                'failed_urls': failed_urls
+            }
+            
+            with open(detailed_log_path, 'w', encoding='utf-8') as f:
+                json.dump(detailed_log_data, f, indent=4, ensure_ascii=False)
+            
+            logging.info(f"Detailed log saved to: {detailed_log_path}")
+            logging.info(f"Total URLs: {len(all_urls)}, Successful: {len(successful_urls)}, Failed: {len(failed_urls)}")
             logging.info(f"Total products saved: {total_products}")
             return total_products
             
@@ -148,6 +179,11 @@ async def scrape_product_data_usa(country, config):
     categories = load_category_urls(country)
     
     logging.info(f"Starting product URL scrape for {country}")
+    
+    # Track URLs for logging
+    all_urls = []
+    successful_urls = []
+    failed_urls = []
     
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=False)
@@ -228,6 +264,7 @@ async def scrape_product_data_usa(country, config):
                 # Now fetch product data for all collected links
                 logging.info(f"  Fetching data for {len(all_product_links)} products")
                 for product_url in all_product_links:
+                    all_urls.append(product_url)
                     try:
 
                         # Extract composition from product page
@@ -263,16 +300,40 @@ async def scrape_product_data_usa(country, config):
                                 json.dump(product_data, f, indent=2, ensure_ascii=False)
                             
                             total_products += 1
+                            successful_urls.append(product_url)
                             logging.info(f"Saved: {product_handle}")
                         else:
+                            failed_urls.append(product_url)
                             logging.warning(f"Failed to fetch {product_handle}: Status {response.status}")
                         
                         await asyncio.sleep(0.5)
                         
                     except Exception as e:
+                        failed_urls.append(product_url)
                         logging.error(f"    Error processing {product_url}: {str(e)}")
                         continue
             
+            # Save detailed log
+            log_dir = Path(f"{country}/{today_str}/Json_data/Logs")
+            log_dir.mkdir(parents=True, exist_ok=True)
+
+            detailed_log_path = log_dir / f'{country.lower()}_scrape_log_detailed.json'
+            detailed_log_data = {
+                'scrape_date': today_str,
+                'country': country,
+                'total_urls_to_scrape': len(all_urls),
+                'successful_scrapes': len(successful_urls),
+                'failed_scrapes': len(failed_urls),
+                'success_rate': f"{(len(successful_urls) / len(all_urls) * 100):.2f}%" if all_urls else "0%",
+                'successful_urls': successful_urls,
+                'failed_urls': failed_urls
+            }
+            
+            with open(detailed_log_path, 'w', encoding='utf-8') as f:
+                json.dump(detailed_log_data, f, indent=4, ensure_ascii=False)
+            
+            logging.info(f"Detailed log saved to: {detailed_log_path}")
+            logging.info(f"Total URLs: {len(all_urls)}, Successful: {len(successful_urls)}, Failed: {len(failed_urls)}")
             logging.info(f"Total products saved: {total_products}")
             return total_products
             
