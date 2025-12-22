@@ -2,6 +2,8 @@ import pymongo
 import logging
 import os
 import json
+from datetime import datetime
+from dotenv import load_dotenv  
 from datetime import datetime, timedelta
 from alert import raise_ticket
 
@@ -184,18 +186,17 @@ def upload_to_data_melody(countries, today_str, config):
 # ---------------------------------- MAIN EXECUTION ----------------------------------
 
 if __name__ == "__main__":
-    from datetime import datetime
-    from dotenv import load_dotenv
-    
+
     load_dotenv()
     
     TODAY_DATE = datetime.now().strftime("%Y-%m-%d")
+    TODAY_DATE = "2025-12-20"
     COUNTRIES = {'India': 'India'}
     
     MONGO_CONFIG = {
         "SERVER_URI": os.getenv("SERVER_MONGO_URI"),
         "DB_NAME": "tg_analytics",
-        "COLLECTION_PREFIX": "crawler_sink_xyxx_",
+        "COLLECTION_PREFIX": "crawler_sink_colors_",
         "THRESHOLD_PERCENT": 10.0,
         "FORCE_UPLOAD": False,
         "DRY_RUN": False,  # Actually upload to DB
