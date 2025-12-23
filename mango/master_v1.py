@@ -303,7 +303,7 @@ else:
 
 
 MONGO_CONFIG_APPAREL = {
-    'SERVER_URI': 'mongodb://root:iK&dsCaTio976fghI*(bgdskk)~@34.143.153.196:28018/tg_analytics?authSource=admin',
+    'SERVER_URI': 'replace_with_actul_server_string',
     'DB_NAME': 'tg_analytics',
     'COLLECTION_PREFIX': 'crawler_sink_mango_',
     'THRESHOLD_PERCENT': 10.0,
@@ -312,7 +312,7 @@ MONGO_CONFIG_APPAREL = {
 }
 
 MONGO_CONFIG_FOOTWEAR = {
-    'SERVER_URI': 'mongodb://root:iK&dsCaTio976fghI*(bgdskk)~@34.143.153.196:28018/tg_analytics?authSource=admin',
+    'SERVER_URI': 'replace_with_actul_server_string',
     'DB_NAME': 'footwear_analytics',
     'COLLECTION_PREFIX': 'crawler_sink_mango_',
     'THRESHOLD_PERCENT': 10.0,

@@ -122,7 +122,7 @@ USER_AGENTS = [
 
 
 MONGO_CONFIG_APPAREL = {
-    'SERVER_URI': 'mongodb://root:iK&dsCaTio976fghI*(bgdskk)~@34.143.153.196:28018/tg_analytics?authSource=admin', 
+    'SERVER_URI': 'replace_with_actul_server_string', 
     'LOCAL_URI': 'mongodb://localhost:27017',
     'DB_NAME': 'tg_analytics',
     'COLLECTION_PREFIX': 'crawler_sink_bershka_',
@@ -132,7 +132,7 @@ MONGO_CONFIG_APPAREL = {
 }
 
 MONGO_CONFIG_FOOTWEAR = {
-    'SERVER_URI': 'mongodb://root:iK&dsCaTio976fghI*(bgdskk)~@34.143.153.196:28018/tg_analytics?authSource=admin', # IMPORTANT: Update with real URI
+    'SERVER_URI': 'replace_with_actul_server_string', # IMPORTANT: Update with real URI
     'LOCAL_URI': 'mongodb://localhost:27017',
     'DB_NAME': 'footwear_analytics', # Assuming separate DB or collection logic
     'COLLECTION_PREFIX': 'crawler_sink_bershka_',

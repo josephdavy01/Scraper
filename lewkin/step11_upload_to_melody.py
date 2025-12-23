@@ -8,7 +8,7 @@ logger = logging.getLogger('mongo_copier')
 
 # ---------------------------------- CONFIG ----------------------------------
 
-SERVER_MONGO_URI = 'mongodb://root:iK&dsCaTio976fghI*(bgdskk)~@34.143.153.196:28018/tg_analytics?authSource=admin'  # Change to your server URI
+SERVER_MONGO_URI = 'replace_with_actul_server_string'  # Change to your server URI
 LOCAL_MONGO_URI = 'mongodb://localhost:27017'
 DB_NAME = 'tg_analytics'
 COLLECTION_PREFIX = 'crawler_sink_lewkin_'

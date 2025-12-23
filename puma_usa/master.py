@@ -50,7 +50,7 @@ USER_AGENTS = [
     ]
 
 MONGO_CONFIG_APPAREL = {
-    'SERVER_URI': 'mongodb://root:iK&dsCaTio976fghI*(bgdskk)~@34.143.153.196:28018/tg_analytics?authSource=admin', # IMPORTANT: Fill this in
+    'SERVER_URI': 'replace_with_actul_server_string', # IMPORTANT: Fill this in
     'LOCAL_URI': 'mongodb://localhost:27017',
     'DB_NAME': 'tg_analytics',
     'COLLECTION_PREFIX': 'crawler_sink_puma_',
@@ -60,7 +60,7 @@ MONGO_CONFIG_APPAREL = {
 }
 
 MONGO_CONFIG_FOOTWEAR = {
-    'SERVER_URI': 'mongodb://root:iK&dsCaTio976fghI*(bgdskk)~@34.143.153.196:28018/tg_analytics?authSource=admin', # IMPORTANT: Fill this in
+    'SERVER_URI': 'replace_with_actul_server_string', # IMPORTANT: Fill this in
     'LOCAL_URI': 'mongodb://localhost:27017',
     'DB_NAME': 'footwear_analytics',
     'COLLECTION_PREFIX': 'crawler_sink_puma_',

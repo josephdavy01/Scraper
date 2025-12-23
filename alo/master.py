@@ -71,7 +71,7 @@ COUNTRY_CODE_MAP = {
     }
 
 MONGO_CONFIG_APPAREL = {
-    'SERVER_URI': 'mongodb://root:iK&dsCaTio976fghI*(bgdskk)~@34.143.153.196:28018/tg_analytics?authSource=admin', # IMPORTANT: Fill this in
+    'SERVER_URI': 'replace_with_actul_server_string', # IMPORTANT: Fill this in
     'DB_NAME': 'tg_analytics',
     'COLLECTION_PREFIX': 'crawler_sink_alo_',
     'THRESHOLD_PERCENT': 10.0,
