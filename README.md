@@ -1,6 +1,6 @@
 # 🕷️ Scraper — Multi-Brand E-Commerce Product Scraper
 
-A comprehensive Python-based web scraping framework for extracting product data from **48+ global fashion and sportswear brands** across multiple regions. The scraped data is processed, validated, stored in MongoDB, and uploaded to the Melody analytics platform.
+A comprehensive Python-based web scraping framework for extracting product data from **5+ global fashion and sportswear brands** across multiple regions. The scraped data is processed, validated, stored in MongoDB, and uploaded to the Melody analytics platform.
 
 ---
 
