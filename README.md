@@ -150,7 +150,7 @@ scraper/
 ├── .gitignore
 ├── README.md
 │
-├── zara/                          # Example brand module
+├── gymshark/                          # Example brand module
 │   ├── master.py                  # Orchestrator — runs all steps in order
 │   ├── step1_get_category_urls.py
 │   ├── step2_get_product_urls.py
@@ -172,11 +172,7 @@ scraper/
 │       ├── step10_load_to_db_usa.py
 │       └── ...
 │
-├── h&m_uk_india/                  # Another brand module
-├── underarmour/
-├── puma_auto/
-├── ... (48 brand folders)
-```
+
 
 ---
 
