@@ -220,7 +220,7 @@ LOCAL_MONGO_URI=mongodb://localhost:27017
 
 ```bash
 # Navigate to the brand folder and run the master script
-cd zara
+cd gymshark
 python master.py
 ```
 
@@ -228,7 +228,7 @@ python master.py
 
 ```bash
 # Run a specific step for a brand
-cd zara
+cd gymshark
 python step1_get_category_urls.py
 python step6_get_product_data.py
 ```
